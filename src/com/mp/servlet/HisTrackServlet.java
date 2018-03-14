@@ -28,7 +28,7 @@ public class HisTrackServlet extends HttpServlet {
         response.setContentType("application/json; charset=utf8");
         PrintWriter out = response.getWriter();
         if (bean != null)
-            out.write("{result:" + bean.getResult() + ",status:" + bean.getStatus() + "}");
+            out.write("{result:'" + bean.getResult() + "',status:" + bean.getStatus() + "}");
         else
             out.write("{result:null}");
         out.close();

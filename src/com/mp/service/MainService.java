@@ -8,11 +8,11 @@ import redis.clients.jedis.Jedis;
 
 
 public class MainService {
-    private static String apiUrl = "https://testopen.95155.com/apis";//联调测试环境接口地址
+    private static String apiUrl = "https://zhiyunopenapi.95155.com/apis";//联调测试环境接口地址
 
-    private static String apiUser = "725845d0-2d08-45fc-98d7-66ad50605b1a";//这里需要替换成：您的API账号
-    private static String password = "ZsYe0Le2wq65fh71j840Li6pqkX84d";//这里需要替换成：您的API账号密码
-    private static String client_id = "e21b52c0-33bb-457c-b6ae-30ccd3275875";//这里需要替换成：您的客户端ID
+    private static String apiUser = "45c738c6-977a-4b2e-bbe0-748ff4197898";//这里需要替换成：您的API账号
+    private static String password = "t604U2s25JQW43qVdQW2674lk212a9";//这里需要替换成：您的API账号密码
+    private static String client_id = "8a7183bd-ee1f-4b21-9d3f-9f278b789297";//这里需要替换成：您的客户端ID
 
     private static Jedis jedis = RedisService.getJedis();
     private static int EXPIRE_TIME = 2 * 24 * 60 * 60;
@@ -61,6 +61,7 @@ public class MainService {
         return token;
     }
 
+
     /**
      * 车辆最新位置查询（车牌号）接口
      * 本接口提供指定车牌号的车辆最新位置查询。
@@ -70,7 +71,14 @@ public class MainService {
     public static ReturnBean vLastLocationV3(String vclN) {
         try {
             System.out.println(" 车辆最新位置查询（车牌号）接口");
-            String p = "token=" + getToken() + "&vclN=" + vclN + "&timeNearby=24";
+            String token = getToken();
+            if (token == null) {
+                ReturnBean bean = new ReturnBean();
+                bean.setStatus("1011");
+                bean.setResult("登录智运失败");
+                return bean;
+            }
+            String p = "token=" + token + "&vclN=" + vclN + "&timeNearby=24";
             System.out.println("参数:" + p);
             p = TransCode.encode(p);//DES加密
             String url = apiUrl + "/vLastLocationV3/" + p + "?client_id=" + client_id;
@@ -98,8 +106,15 @@ public class MainService {
      */
     public static ReturnBean vHisTrack24(String vclN, String qryBtm, String qryEtm) {
         try {
-            System.out.println("四、	车辆轨迹查询（车牌号）接口");
-            String p = "token=" + getToken() + "&vclN=" + vclN + "&qryBtm=" + qryBtm + "&qryEtm=" + qryEtm;//陕YH0009 2017-05-03 01:00:00 2017-05-03 01:59:59
+            System.out.println("车辆轨迹查询（车牌号）接口");
+            String token = getToken();
+            if (token == null) {
+                ReturnBean bean = new ReturnBean();
+                bean.setStatus("1011");
+                bean.setResult("登录智运失败");
+                return bean;
+            }
+            String p = "token=" + token + "&vclN=" + vclN + "&qryBtm=" + qryBtm + "&qryEtm=" + qryEtm;//陕YH0009 2017-05-03 01:00:00 2017-05-03 01:59:59
             System.out.println("参数:" + p);
             p = TransCode.encode(p);//DES加密
             String url = apiUrl + "/vHisTrack24/" + p + "?client_id=" + client_id;
@@ -126,8 +141,15 @@ public class MainService {
      */
     public static ReturnBean checkTruckExist(String vclN) {
         try {
-            System.out.println("六、	车辆入网验证");
-            String p = "token=" + getToken() + "&vclN=" + vclN;//陕YH0009
+            System.out.println("车辆入网验证");
+            String token = getToken();
+            if (token == null) {
+                ReturnBean bean = new ReturnBean();
+                bean.setStatus("1011");
+                bean.setResult("登录智运失败");
+                return bean;
+            }
+            String p = "token=" + token + "&vclN=" + vclN;//陕YH0009
             System.out.println("参数:" + p);
             p = TransCode.encode(p);//DES加密
             String url = apiUrl + "/checkTruckExist/" + p + "?client_id=" + client_id;
@@ -154,10 +176,52 @@ public class MainService {
     public static ReturnBean vQueryLicense(String vclN) {
         try {
             System.out.println("车辆行驶证信息查询接口");
-            String p = "token=" + getToken() + "&vclN=" + vclN + "&vco=2";
+            String token = getToken();
+            if (token == null) {
+                ReturnBean bean = new ReturnBean();
+                bean.setStatus("1011");
+                bean.setResult("登录智运失败");
+                return bean;
+            }
+            String p = "token=" + token + "&vclN=" + vclN + "&vco=2";
             System.out.println("参数:" + p);
             p = TransCode.encode(p);//DES加密
             String url = apiUrl + "/vQueryLicense/" + p + "?client_id=" + client_id;
+            DataExchangeService des = new DataExchangeService(5000, 5000);
+            System.out.println("请求地址:" + url);
+            String res = des.accessHttps(url, "POST");
+            res = TransCode.decode(res);//DES解密
+            System.out.println("返回:" + res);
+            ReturnBean bean = JSON.parseObject(res, ReturnBean.class);
+            analysisStatus(bean);//解析接口返回状态
+            System.out.println("------------------------------------------------------");
+            return bean;
+        } catch (Exception e) {
+            System.out.println("e:" + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 车辆停车查询接口
+     * 本接口提供指定车牌号，指定时间段查询车辆停车信息，开始时间和结束时间不能超过24小时。
+     * 接口返回数据解码后样例：
+     * {"result":{"parkInfo":[{"adr":"天津市蓟县田野农家，向东方向，253米","bte":"2017-07-03 10:37:05","ete":"2017-07-03 11:21:42","lat":"39.82045333333333","lon":"117.29147166666667","parkMins":"44.0"},{"adr":"天津市蓟县田野农家，向东方向，232米","bte":"2017-07-03 11:23:52","ete":"2017-07-03 13:05:32","lat":"39.82045333333333","lon":"117.29171333333333","parkMins":"101.0"},{"adr":"天津市蓟县田野农家，向东方向，253米","bte":"2017-07-03 13:40:13","ete":"2017-07-03 13:56:33","lat":"39.82045333333333","lon":"117.29147166666667","parkMins":"16.0"}],"parkSize":3},"status":1001}
+     */
+    public static ReturnBean vQueryPark(String vclN, String qryBtm, String qryEtm, String parkMins) {
+        try {
+            System.out.println("车辆停车查询接口");
+            String token = getToken();
+            if (token == null) {
+                ReturnBean bean = new ReturnBean();
+                bean.setStatus("1011");
+                bean.setResult("登录智运失败");
+                return bean;
+            }
+            String p = "token=" + token + "&vclN=" + vclN + "&vco=2&qryBtm=" + qryBtm + "&qryEtm=" + qryEtm + "&parkMins=" + parkMins;
+            System.out.println("参数:" + p);
+            p = TransCode.encode(p);//DES加密
+            String url = apiUrl + "/vQueryPark/" + p + "?client_id=" + client_id;
             DataExchangeService des = new DataExchangeService(5000, 5000);
             System.out.println("请求地址:" + url);
             String res = des.accessHttps(url, "POST");

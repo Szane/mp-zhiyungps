@@ -11,9 +11,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-
-@WebServlet(name = "LastLocationServlet", urlPatterns = "/lastLocation")
-public class LastLocationServlet extends HttpServlet {
+@WebServlet(name = "QueryParkServlet", urlPatterns = "/queryPark")
+public class QueryParkServlet extends HttpServlet {
     @Override
     public void init() throws ServletException {
 
@@ -22,7 +21,10 @@ public class LastLocationServlet extends HttpServlet {
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String vclN = new String(request.getParameter("vclN").getBytes("ISO-8859-1"), "UTF-8");
-        ReturnBean bean = MainService.vLastLocationV3(vclN);
+        String qryBtm = new String(request.getParameter("qryBtm").getBytes("ISO-8859-1"), "UTF-8");
+        String qryEtm = new String(request.getParameter("qryEtm").getBytes("ISO-8859-1"), "UTF-8");
+        String parkMins = new String(request.getParameter("parkMins").getBytes("ISO-8859-1"), "UTF-8");
+        ReturnBean bean = MainService.vQueryPark(vclN, qryBtm, qryEtm, parkMins);
         response.setCharacterEncoding("utf8");
         response.setContentType("application/json; charset=utf8");
         PrintWriter out = response.getWriter();
